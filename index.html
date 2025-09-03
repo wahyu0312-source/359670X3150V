@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>出荷検査成績書 WY-150VX3</title>
+  <title>出荷検査成績書 WY-150X3</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -40,9 +40,10 @@
     .stamp-label { font-size:3mm; text-align:center; }
     #stampBox[data-visible="0"] #stampMain { display:none; }
 
-    .toolbar { position:fixed; top:12px; left:50%; transform:translateX(-50%); display:flex; gap:8px; padding:8px 10px; background:rgba(255,255,255,0.92); border:1px solid #ddd; border-radius:12px; box-shadow:0 2px 18px rgba(0,0,0,.12); z-index:9999; backdrop-filter:blur(4px); }
+    .toolbar { position:fixed; top:12px; left:50%; transform:translateX(-50%); display:flex; gap:8px; padding:8px 10px; background:rgba(255,255,255,0.92); border:1px solid #ddd; border-radius:12px; box-shadow:0 2px 18px rgba(0,0,0,.12); z-index:9999; backdrop-filter:blur(4px); align-items:center; }
     .toolbar button { font-family:Arial,sans-serif; font-size:14px; padding:8px 14px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer; }
     .toolbar button:hover { filter:brightness(.96); }
+    .toolbar .key-badge { font-size:12px; color:#555; }
     @media (max-width:560px){ .toolbar{ top:8px; gap:6px; padding:6px 8px; } .toolbar button{ padding:6px 10px; font-size:13px; } }
 
     @media print {
@@ -69,8 +70,10 @@
   <div class="toolbar">
     <button type="button" onclick="printViaPDF()">🖨️ 印刷</button>
     <button type="button" onclick="saveToNASFixed()">💾 NAS保存</button>
+    <button type="button" onclick="pickFolder()">📁 フォルダ選択</button>
+    <span class="no-print key-badge">key: <code id="folderKeyText"></code></span>
     <button type="button" onclick="clearAllFields()">🧹 全てクリア</button>
-    <button type="button" onclick="configureNextSerial()">🔢 番号設定</button>
+    <button type="button" onclick="configureNextSerial()">🔢 次番号設定</button>
     <button type="button" onclick="configureDigits()">#️⃣ 桁数設定</button>
   </div>
 
@@ -99,11 +102,11 @@
           </td>
         </tr>
         <tr>
-          <td class="section-label">機種</td><td class="align-left">WY-150VX3</td>
+          <td class="section-label">機種</td><td class="align-left">WY-150X3</td>
           <td class="section-label">品番</td>
           <td>J21*4016013BB</td>
           <td class="section-label">図番</td>
-          <td><input type="text" name="zuban" value="3555-71" class="soft-required" data-soft-required="1" /></td>
+          <td><input type="text" name="zuban" value="3596-70" class="soft-required" data-soft-required="1" /></td>
         </tr>
         <tr>
           <td class="section-label">品名</td><td class="align-left">X2プロテクター</td>
@@ -115,7 +118,7 @@
           <td class="section-label">製造No</td>
           <td class="align-left">
             <div class="serial-wrap no-print">
-              <span class="serial-prefix" data-prefix>355571-</span>
+              <span class="serial-prefix" data-prefix>359670-</span>
               <input type="text" name="serial_no_suffix" inputmode="numeric" placeholder="001" class="soft-required" data-soft-required="1" readonly />
             </div>
             <span class="print-text" data-serial-print></span>
@@ -187,18 +190,19 @@
 
   <script>
     // === CONFIG ===
-    const APP_NS = '3555-71';
+    const APP_NS = '3596-70';
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
     const COMPANY_LABEL = '東京精密発條株式会社';
     const serverPrefix = () => `${APP_NS}::${getSerialPrefix()}`;
-    const SERIAL_SCOPE = () => `tomei:serial:${APP_NS}:${getSerialPrefix() || '355571-'}`;
+    const SERIAL_SCOPE = () => `tomei:serial:${APP_NS}:${getSerialPrefix() || '359670-'}`;
     let PAD_DIGITS = 3; // Tomei default 3 (001)
 
     /* ---------- Helpers UI ---------- */
+    function updateStampPreview(id, src) { const el=document.getElementById(id); if(el) el.src = src || ''; }
     function clearAllFields() {
       const form = document.getElementById('inspection-form');
       form.reset();
-      document.getElementById('stampMain').src = '';
+      updateStampPreview('stampMain','');
       document.getElementById('stampBox').setAttribute('data-visible','0');
       form.querySelectorAll('.td-measure-grid input.invalid').forEach(el => el.classList.remove('invalid'));
       wireDateMirror(); wireEnterNavigationAll(); wireSerialMirror();
@@ -217,7 +221,9 @@
         inp.addEventListener('input',()=>{
           let v = normalize(inp.value).replace(/[^\d.]/g,'');
           if((v.match(/\./g)||[]).length>1){ const [h,...r]=v.split('.'); v=h+'.'+r.join('').replace(/\D/g,''); }
-          if(v.includes('.')){ let[d='',f='']=v.split('.'); d=d.slice(0,MAX_INT_DIGITS);
+          if(v.includes('.')){
+            let[d='',f='']=v.split('.');
+            d=d.slice(0,MAX_INT_DIGITS);
             v = allowDec ? (f===''?`${d}.`:`${d}.${(f||'').replace(/\D/g,'').slice(0,1)}`) : d;
           } else v=v.slice(0,MAX_INT_DIGITS);
           inp.value=v; inp.classList.remove('invalid');
@@ -281,7 +287,7 @@
     function setSerialSuffix(num){ const s = formatSuffix(num); const inp = document.querySelector('input[name="serial_no_suffix"]'); if(!inp) return; inp.value = s; inp.dispatchEvent(new Event('input', { bubbles:true })); markSoftRequired(); }
     function wireSerialMirror() { const out = document.querySelector('[data-serial-print]'); const inp = document.querySelector('input[name="serial_no_suffix"]'); if (!out) return; const upd = () => { out.textContent = getSerialFull(); }; inp?.addEventListener('input', upd); upd(); }
     function computePrefixFromZuban(z){ const digits=String(z||'').replace(/[^0-9]/g,''); return digits ? `${digits}-` : ''; }
-    function applyPrefix(){ const z = getZuban(); const pref = computePrefixFromZuban(z); const span = document.querySelector('.serial-prefix'); if(span) span.textContent = pref || '355571-'; }
+    function applyPrefix(){ const z = getZuban(); const pref = computePrefixFromZuban(z); const span = document.querySelector('.serial-prefix'); if(span) span.textContent = pref || '359670-'; }
 
     /* ---------- GAS API ---------- */
     async function apiGAS(body){
@@ -304,7 +310,10 @@
         return;
       }catch(e){ /* fallback lokal */ }
       const KEY = `${SERIAL_SCOPE()}:lastSuffix`;
-      const next = await (async()=>{ const last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0; const nxt = last + 1; localStorage.setItem(KEY, String(nxt)); return nxt; })();
+      const next = await (async()=>{
+        const last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
+        const nxt = last + 1; localStorage.setItem(KEY, String(nxt)); return nxt;
+      })();
       setSerialSuffix(next);
     }
 
@@ -313,10 +322,32 @@
     function getClientId(){ const k='okuma:clientId'; let id=localStorage.getItem(k); if(!id){ id=crypto.randomUUID(); localStorage.setItem(k,id);} return id; }
     function showLockOverlay(show){ const ov=document.getElementById('lock-overlay'); if(ov){ ov.style.display = show? 'flex':'none'; } }
     function setEditingEnabled(enabled){ const disabled = !enabled; const form=document.getElementById('inspection-form'); form.querySelectorAll('input,select,textarea,button').forEach(el=>{ el.disabled = disabled; }); }
-    async function acquireSharedLock(prefix){ try{ const data = await apiGAS({ action:'acquireLock', prefix, clientId=getClientId(), ttlSec:LOCK_TTL_SEC }); if(data?.ok){ __lockId = data.lockId || 'local'; heartbeatLock(prefix); return true; } return false; }catch(e){ return true; } }
-    function heartbeatLock(prefix){ if(__lockTimer) clearInterval(__lockTimer); if(!__lockId) return; __lockTimer = setInterval(async()=>{ try{ await apiGAS({ action:'extendLock', lockId:__lockId, prefix, clientId:getClientId(), ttlSec:LOCK_TTL_SEC }); }catch(e){} }, 60000); }
-    async function releaseSharedLock(){ if(!__lockId) return; try{ await apiGAS({ action:'releaseLock', lockId:__lockId, clientId:getClientId() }); }catch(e){} __lockId=null; if(__lockTimer){ clearInterval(__lockTimer); __lockTimer=null; } }
-    async function ensureHasLockOrAcquire(){ const prefix = serverPrefix(); if(__lockId) return true; const ok = await acquireSharedLock(prefix); if(!ok){ showLockOverlay(true); setEditingEnabled(false); } else { showLockOverlay(false); setEditingEnabled(true); } return ok; }
+    async function acquireSharedLock(prefix){
+      try{
+        const data = await apiGAS({ action:'acquireLock', prefix, clientId=getClientId(), ttlSec:LOCK_TTL_SEC });
+        if(data?.ok){ __lockId = data.lockId || 'local'; heartbeatLock(prefix); return true; }
+        return false;
+      }catch(e){ return true; }
+    }
+    function heartbeatLock(prefix){
+      if(__lockTimer) clearInterval(__lockTimer); if(!__lockId) return;
+      __lockTimer = setInterval(async()=>{
+        try{ await apiGAS({ action:'extendLock', lockId:__lockId, prefix, clientId:getClientId(), ttlSec:LOCK_TTL_SEC }); }catch(e){}
+      }, 60000);
+    }
+    async function releaseSharedLock(){
+      if(!__lockId) return;
+      try{ await apiGAS({ action:'releaseLock', lockId:__lockId, clientId:getClientId() }); }catch(e){}
+      __lockId=null; if(__lockTimer){ clearInterval(__lockTimer); __lockTimer=null; }
+    }
+    async function ensureHasLockOrAcquire(){
+      const prefix = serverPrefix();
+      if(__lockId) return true;
+      const ok = await acquireSharedLock(prefix);
+      if(!ok){ showLockOverlay(true); setEditingEnabled(false); }
+      else { showLockOverlay(false); setEditingEnabled(true); }
+      return ok;
+    }
 
     /* ---------- File naming & render ---------- */
     const sanitize = s => (s||'').replace(/[\\/:*?"<>|]/g,'').trim();
@@ -333,9 +364,13 @@
     }
     async function renderFormCanvas() {
       const el=document.querySelector('.b5-preview');
-      return html2canvas(el,{ scale:2, backgroundColor:'#FFFFFF', useCORS:true,
-        onclone:(doc)=>{ doc.querySelectorAll('.no-print').forEach(e=>e.style.display='none');
-                         doc.querySelectorAll('.print-text').forEach(e=>e.style.display='inline'); } });
+      return html2canvas(el,{
+        scale:2, backgroundColor:'#FFFFFF', useCORS:true,
+        onclone:(doc)=>{
+          doc.querySelectorAll('.no-print').forEach(e=>e.style.display='none');
+          doc.querySelectorAll('.print-text').forEach(e=>e.style.display='inline');
+        }
+      });
     }
     async function buildPdfDoc(){
       const { jsPDF } = window.jspdf;
@@ -355,19 +390,48 @@
     }
 
     /* ---------- Save to NAS ---------- */
-    const DB_NAME='form-folder-db', STORE='folders'; let __db; const FIXED_KEY='Tomei_WY-150VX3';
+    const DB_NAME='form-folder-db', STORE='folders'; let __db;
+    const FIXED_KEY='Tomei_WY-150X3'; // << key yang ditampilkan & dipakai IndexedDB (sekali pilih)
     function openDB(){ return new Promise((resolve,reject)=>{ const req=indexedDB.open(DB_NAME,1); req.onupgradeneeded=()=>req.result.createObjectStore(STORE); req.onsuccess=()=>{ __db=req.result; resolve(); }; req.onerror=()=>reject(req.error); });}
     async function openDBIfNeeded(){ if(!__db) await openDB(); }
     async function putHandle(key, handle){ await openDBIfNeeded(); return new Promise((res,rej)=>{ const tx=__db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(handle,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
     async function getHandle(key){ await openDBIfNeeded(); return new Promise((res,rej)=>{ const tx=__db.transaction(STORE,'readonly'); const r=tx.objectStore(STORE).get(key); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
+
+    // pilih folder sekali → simpan ke IndexedDB
+    async function pickFolder(){
+      if(!window.showDirectoryPicker){
+        alert('このブラウザはフォルダ選択に対応していません。');
+        return;
+      }
+      try{
+        const dir = await window.showDirectoryPicker({ mode:'readwrite' });
+        await navigator.storage?.persist?.();
+        await putHandle(FIXED_KEY, dir);
+        alert('保存先フォルダを設定しました。');
+      }catch(e){ /* canceled → no-op */ }
+    }
+    async function ensureDir(){
+      let dir = await getHandle(FIXED_KEY);
+      if(!dir && window.showDirectoryPicker){
+        try{
+          dir = await window.showDirectoryPicker({ mode:'readwrite' });
+          await navigator.storage?.persist?.();
+          await putHandle(FIXED_KEY, dir);
+        }catch(e){ /* canceled */ }
+      }
+      return dir || null;
+    }
+
+    // duplikat by Serial (abaikan nol di kiri)
     async function serialExists(dir, prefix, numeric){
-      if(!dir.entries) return false;
-      const pattern = new RegExp(`_${prefix}0*${numeric}\\.pdf$`);
+      if(!dir?.entries) return false;
+      const pattern = new RegExp(`_${prefix.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}0*${numeric}\\.pdf$`);
       for await (const [name] of dir.entries()){
         if(/\.pdf$/i.test(name) && pattern.test(name)) return name;
       }
       return false;
     }
+
     async function saveToNASFixed(){
       const ok = await ensureHasLockOrAcquire();
       if(!ok){ alert('現在ほかの端末が使用中のため、保存できません。'); return; }
@@ -375,22 +439,32 @@
       const fileName = computeFilename();
       if(!window.showDirectoryPicker){ const doc = await buildPdfDoc(); doc.save(fileName); return; }
       try{
-        let dir = await getHandle(FIXED_KEY);
-        if(!dir){ dir = await window.showDirectoryPicker({ mode:'readwrite' }); await navigator.storage?.persist?.(); await putHandle(FIXED_KEY, dir); }
+        let dir = await ensureDir();
+        if(!dir){ const doc = await buildPdfDoc(); doc.save(fileName); return; }
+
         let perm = await dir.queryPermission?.({ mode:'readwrite' });
-        if(perm!=='granted'){ perm = await dir.requestPermission?.({ mode:'readwrite' }); if(perm!=='granted'){ const doc = await buildPdfDoc(); doc.save(fileName); return; } }
-        const rawPrefix = getSerialPrefix();
+        if(perm!=='granted'){
+          perm = await dir.requestPermission?.({ mode:'readwrite' });
+          if(perm!=='granted'){ const doc = await buildPdfDoc(); doc.save(fileName); return; }
+        }
+
+        // cek duplikat: prefix + angka (abaikan padding nol)
+        const rawPrefix = getSerialPrefix();             // ex: '359670-'
         const suffixStr = (document.querySelector('input[name="serial_no_suffix"]').value || '').trim();
         const numeric = parseInt(suffixStr.replace(/^0+/,'') || '0', 10);
         const dupe = await serialExists(dir, sanitize(rawPrefix), numeric);
         if(dupe){ alert(`同じ製造Noのファイルが既に存在します:\n${dupe}\n保存を中止しました。`); return; }
+
         const doc = await buildPdfDoc();
         const fh = await dir.getFileHandle(fileName, { create:true });
         const w = await fh.createWritable();
         await w.write(doc.output('blob')); await w.close();
-        const t=new Date(); alert(`保存しました: ${fileName}\n時刻: ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`);
-      }catch(e){ console.error('NAS write failed; fallback to download.', e);
-        const doc = await buildPdfDoc(); doc.save(fileName); }
+        const t=new Date();
+        alert(`保存しました: ${fileName}\n時刻: ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}`);
+      }catch(e){
+        console.error('NAS write failed; fallback to download.', e);
+        const doc = await buildPdfDoc(); doc.save(fileName);
+      }
     }
 
     function setTodayIfEmpty(inputName){
@@ -403,7 +477,7 @@
       }
     }
 
-    /* ---------- Cap merah (tanpa kotak nama) ---------- */
+    /* ---------- Cap merah ---------- */
     const INK = '#d42828';
     function formatSealDate(ymd){
       if(!ymd) return '';
@@ -477,16 +551,20 @@
       if (img) img.src = url || '';
     }
 
-    /* ---------- simple settings ---------- */
+    /* ---------- Admin dialogs via GAS ---------- */
     async function configureNextSerial(){
       try{
-        const info = await apiGAS({ action:'getInfo', prefix: serverPrefix() });
+        const info = await getInfoShared(serverPrefix());
         const cur = (info && typeof info.next==='number') ? info.next : '';
         const v = prompt('次の製造No（数字のみ）', cur);
         if(v===null) return;
         const n = parseInt(v,10);
-        if(Number.isFinite(n)){ await apiGAS({ action:'setNext', prefix:serverPrefix(), next:n }); alert('更新しました。'); }
-        else alert('数字を入力してください。');
+        if(Number.isFinite(n)){
+          await setNextSuffixShared(serverPrefix(), n);
+          alert('更新しました。');
+        } else {
+          alert('数字を入力してください。');
+        }
       }catch(e){ alert('設定に失敗しました。'); }
     }
     async function configureDigits(){
@@ -495,7 +573,7 @@
         if(v===null) return;
         const n = Math.max(1, parseInt(v,10)||PAD_DIGITS);
         PAD_DIGITS = n;
-        await apiGAS({ action:'setDigits', prefix:serverPrefix(), digits:n });
+        await setDigitsShared(serverPrefix(), n);
         alert('更新しました。');
       }catch(e){ alert('設定に失敗しました。'); }
     }
@@ -503,12 +581,13 @@
     /* ---------- INIT ---------- */
     window.addEventListener('load', async () => {
       document.getElementById('companyOutside').textContent = COMPANY_LABEL;
+      const keyEl=document.getElementById('folderKeyText'); if(keyEl) keyEl.textContent = 'Tomei_WY-150X3';
       wireDateMirror(); wireEnterNavigationAll(); wireSerialMirror();
       setTodayIfEmpty('hakkohiduke'); applyPrefix();
       wireSoftRequired(); markSoftRequired();
       document.querySelector('input[name="zuban"]').addEventListener('change', ()=>{ applyPrefix(); });
       try{
-        const info = await apiGAS({ action:'getInfo', prefix: serverPrefix() });
+        const info = await getInfoShared(serverPrefix());
         if (typeof info?.digits === 'number' && info.digits >= 1) PAD_DIGITS = info.digits;
       }catch(e){}
       document.getElementById('stampWho')?.addEventListener('change', updateDynamicSeal);
