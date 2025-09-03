@@ -31,7 +31,6 @@
     .inputter-row label { width:12mm; font-weight:bold; }
     .inputter-row select { width:30%; }
 
-    /* ---- area stempel ---- */
     .stamp-layout { display:flex; justify-content:flex-end; margin-top:3mm; }
     .stamp-box { display:flex; flex-direction:column; align-items:center; gap:1.2mm; }
     .company-outside { font-weight:bold; align-self:flex-end; }
@@ -39,8 +38,6 @@
     .signature-box.big { width:40mm; height:40mm; }
     .signature-box.big img { width:30mm; height:30mm; object-fit:contain; }
     .stamp-label { font-size:3mm; text-align:center; }
-
-    /* kotak stempel selalu tampil; hanya sembunyikan gambar saat belum dipilih */
     #stampBox[data-visible="0"] #stampMain { display:none; }
 
     .toolbar { position:fixed; top:12px; left:50%; transform:translateX(-50%); display:flex; gap:8px; padding:8px 10px; background:rgba(255,255,255,0.92); border:1px solid #ddd; border-radius:12px; box-shadow:0 2px 18px rgba(0,0,0,.12); z-index:9999; backdrop-filter:blur(4px); }
@@ -69,7 +66,6 @@
   </style>
 </head>
 <body>
-  <!-- toolbar -->
   <div class="toolbar">
     <button type="button" onclick="printViaPDF()">🖨️ 印刷</button>
     <button type="button" onclick="saveToNASFixed()">💾 NAS保存</button>
@@ -103,7 +99,7 @@
           </td>
         </tr>
         <tr>
-          <td class="section-label">機種</td><td class="align-left">NTY3-100V</td>
+          <td class="section-label">機種</td><td class="align-left">WY-150VX3</td>
           <td class="section-label">品番</td>
           <td>J21*4016013BB</td>
           <td class="section-label">図番</td>
@@ -150,7 +146,7 @@
 
       <table class="inspection-table">
         <tr><th>項目</th><th>基準値</th><th>測定値</th></tr>
-        <tr><td>Ｘストローク(MAX)</td><td>167.5 mm以上</td><td class="td-measure"><div class="td-measure-grid"><input type="text" inputmode="numeric" name="a_length" placeholder=">=167.5" data-min="167.5" class="soft-required" data-soft-required="1" /><span>mm</span></div></td></tr>
+        <tr><td>Ｘストローク(MAX)</td><td>167.5 mm以上</td><td class="td-measure"><div class="td-measure-grid"><input type="text" inputmode="decimal" step="0.1" name="a_length" placeholder=">=167.5" data-min="167.5" class="soft-required" data-soft-required="1" /><span>mm</span></div></td></tr>
         <tr><td>Yストローク(MAX)</td><td>77 mm以上</td><td class="td-measure"><div class="td-measure-grid"><input type="text" inputmode="numeric" name="b_length" placeholder=">=77" data-min="77" class="soft-required" data-soft-required="1" /><span>mm</span></div></td></tr>
         <tr><td>初期摺動抵抗</td><td>6.0 kg以下</td><td class="td-measure"><div class="td-measure-grid"><input type="text" inputmode="decimal" step="0.1" name="start_resist" placeholder="0-6.0" data-min="0" data-max="6" class="soft-required" data-soft-required="1" /><span>kg</span></div></td></tr>
         <tr><td>中期摺動抵抗</td><td>5.0 kg以下</td><td class="td-measure"><div class="td-measure-grid"><input type="text" inputmode="decimal" step="0.1" name="mid_resist" placeholder="0-5.0" data-min="0" data-max="5" class="soft-required" data-soft-required="1" /><span>kg</span></div></td></tr>
@@ -168,7 +164,7 @@
         <input type="text" name="bikou" value="" style="width:70%;" />
       </div>
 
-      <!-- ======= stempel + label luar ======= -->
+      <!-- ======= stamp ======= -->
       <div class="stamp-layout">
         <div class="stamp-box" id="stampBox" data-visible="0">
           <div id="companyOutside" class="company-outside">東京精密発條株式会社</div>
@@ -185,18 +181,18 @@
           <div class="signature-box big"><img id="stampMain" src="" alt=""></div>
         </div>
       </div>
-      <!-- ==================================== -->
+      <!-- ===================== -->
     </div>
   </form>
 
   <script>
     // === CONFIG ===
-    const APP_NS = '359670X3150V';
+    const APP_NS = '3555-71';
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWxAa_dWQNoUPhWnkw3P22jgeW4vb44Z5ISuUyUWsAAroFzzE6iIVWMIpqqio6E5OgqA/exec';
     const COMPANY_LABEL = '東京精密発條株式会社';
     const serverPrefix = () => `${APP_NS}::${getSerialPrefix()}`;
-    const SERIAL_SCOPE = () => `okuma:serial:${APP_NS}:${getSerialPrefix() || '359670-'}`;
-    let PAD_DIGITS = 4;
+    const SERIAL_SCOPE = () => `tomei:serial:${APP_NS}:${getSerialPrefix() || '355571-'}`;
+    let PAD_DIGITS = 3; // Tomei default 3 (001)
 
     /* ---------- Helpers UI ---------- */
     function clearAllFields() {
@@ -211,6 +207,7 @@
       document.getElementById('companyOutside').textContent = COMPANY_LABEL;
       updateDynamicSeal();
     }
+
     (function wireMeasureValidation() {
       const fields = document.querySelectorAll('.td-measure-grid input');
       const normalize = s => s.replace(/[，,]/g,'.').replace(/[．｡。]/g,'.');
@@ -238,6 +235,7 @@
         inp.addEventListener('input', markSoftRequired);
       });
     })();
+
     function wireEnterNavigationAll() {
       const form=document.getElementById('inspection-form');
       const getFields=()=>Array.from(form.querySelectorAll('input, select, textarea')).filter(el=>!el.disabled && el.type!=='hidden' && el.offsetParent!==null);
@@ -247,13 +245,16 @@
         el.addEventListener('keydown',e=>{ if(e.isComposing||e.keyCode===229) return; if(e.key==='Enter'){ e.preventDefault(); move(el,e.shiftKey?-1:+1);} });
       });
     }
+
     function wireDateMirror(){
       document.querySelectorAll('input[type="date"]').forEach(inp=>{
         const span=document.querySelector(`.print-text[data-from="${inp.name}"]`); if(!span) return;
-        const fmt=v=>v?v.replace(/(\d{4})-(\d{2})-(\d{2})/,'$1/$2/$3'):''; const upd=()=>span.textContent=fmt(inp.value);
+        const fmt=v=>v?v.replace(/(\d{4})-(\d{2})-(\d{2})/,'$1/$2/$3'):'';
+        const upd=()=>span.textContent=fmt(inp.value);
         inp.addEventListener('change',()=>{ upd(); markSoftRequired(); updateDynamicSeal(); }); upd();
       });
     }
+
     function markSoftRequired(){
       document.querySelectorAll('[data-soft-required]').forEach(el=>{
         let filled = true;
@@ -279,8 +280,8 @@
     function formatSuffix(num){ const s = String(num); return s.length >= PAD_DIGITS ? s : ('0'.repeat(PAD_DIGITS - s.length) + s); }
     function setSerialSuffix(num){ const s = formatSuffix(num); const inp = document.querySelector('input[name="serial_no_suffix"]'); if(!inp) return; inp.value = s; inp.dispatchEvent(new Event('input', { bubbles:true })); markSoftRequired(); }
     function wireSerialMirror() { const out = document.querySelector('[data-serial-print]'); const inp = document.querySelector('input[name="serial_no_suffix"]'); if (!out) return; const upd = () => { out.textContent = getSerialFull(); }; inp?.addEventListener('input', upd); upd(); }
-    function computePrefixFromZuban(z){ const digits=String(z||'').replace(/[^0-9]/g,''); return digits ? `Y${digits}-` : 'Y-'; }
-    function applyPrefix(){ const z = getZuban(); const pref = computePrefixFromZuban(z); const span = document.querySelector('.serial-prefix'); if(span) span.textContent = pref; }
+    function computePrefixFromZuban(z){ const digits=String(z||'').replace(/[^0-9]/g,''); return digits ? `${digits}-` : ''; }
+    function applyPrefix(){ const z = getZuban(); const pref = computePrefixFromZuban(z); const span = document.querySelector('.serial-prefix'); if(span) span.textContent = pref || '355571-'; }
 
     /* ---------- GAS API ---------- */
     async function apiGAS(body){
@@ -292,6 +293,7 @@
     async function setNextSuffixShared(prefix, next){ const data = await apiGAS({ action:'setNext', prefix, next }); if(data?.ok !== true) throw new Error('Bad setNext'); return true; }
     async function setDigitsShared(prefix, digits){ const data = await apiGAS({ action:'setDigits', prefix, digits }); if(data?.ok !== true) throw new Error('Bad setDigits'); return true; }
     async function getInfoShared(prefix){ const data = await apiGAS({ action:'getInfo', prefix }); return data; }
+
     async function assignNextSerialSuffix(){
       const prefix = serverPrefix();
       try{
@@ -311,7 +313,7 @@
     function getClientId(){ const k='okuma:clientId'; let id=localStorage.getItem(k); if(!id){ id=crypto.randomUUID(); localStorage.setItem(k,id);} return id; }
     function showLockOverlay(show){ const ov=document.getElementById('lock-overlay'); if(ov){ ov.style.display = show? 'flex':'none'; } }
     function setEditingEnabled(enabled){ const disabled = !enabled; const form=document.getElementById('inspection-form'); form.querySelectorAll('input,select,textarea,button').forEach(el=>{ el.disabled = disabled; }); }
-    async function acquireSharedLock(prefix){ try{ const data = await apiGAS({ action:'acquireLock', prefix, clientId:getClientId(), ttlSec:LOCK_TTL_SEC }); if(data?.ok){ __lockId = data.lockId || 'local'; heartbeatLock(prefix); return true; } return false; }catch(e){ return true; } }
+    async function acquireSharedLock(prefix){ try{ const data = await apiGAS({ action:'acquireLock', prefix, clientId=getClientId(), ttlSec:LOCK_TTL_SEC }); if(data?.ok){ __lockId = data.lockId || 'local'; heartbeatLock(prefix); return true; } return false; }catch(e){ return true; } }
     function heartbeatLock(prefix){ if(__lockTimer) clearInterval(__lockTimer); if(!__lockId) return; __lockTimer = setInterval(async()=>{ try{ await apiGAS({ action:'extendLock', lockId:__lockId, prefix, clientId:getClientId(), ttlSec:LOCK_TTL_SEC }); }catch(e){} }, 60000); }
     async function releaseSharedLock(){ if(!__lockId) return; try{ await apiGAS({ action:'releaseLock', lockId:__lockId, clientId:getClientId() }); }catch(e){} __lockId=null; if(__lockTimer){ clearInterval(__lockTimer); __lockTimer=null; } }
     async function ensureHasLockOrAcquire(){ const prefix = serverPrefix(); if(__lockId) return true; const ok = await acquireSharedLock(prefix); if(!ok){ showLockOverlay(true); setEditingEnabled(false); } else { showLockOverlay(false); setEditingEnabled(true); } return ok; }
@@ -353,15 +355,15 @@
     }
 
     /* ---------- Save to NAS ---------- */
-    const DB_NAME='form-folder-db', STORE='folders'; let __db; const FIXED_KEY='Tomei_WY-150V';
-    function openDB(){ return new Promise((resolve,reject)=>{ const req=indexedDB.open(DB_NAME,1); req.onupgradeneeded=()=>req.result.createObjectStore(STORE); req.onsuccess=()=>{ __db=req.result; resolve(); }; req.onerror=()=>rej(req.error); });}
+    const DB_NAME='form-folder-db', STORE='folders'; let __db; const FIXED_KEY='Tomei_WY-150VX3';
+    function openDB(){ return new Promise((resolve,reject)=>{ const req=indexedDB.open(DB_NAME,1); req.onupgradeneeded=()=>req.result.createObjectStore(STORE); req.onsuccess=()=>{ __db=req.result; resolve(); }; req.onerror=()=>reject(req.error); });}
     async function openDBIfNeeded(){ if(!__db) await openDB(); }
     async function putHandle(key, handle){ await openDBIfNeeded(); return new Promise((res,rej)=>{ const tx=__db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(handle,key); tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); }); }
     async function getHandle(key){ await openDBIfNeeded(); return new Promise((res,rej)=>{ const tx=__db.transaction(STORE,'readonly'); const r=tx.objectStore(STORE).get(key); r.onsuccess=()=>res(r.result||null); r.onerror=()=>rej(r.error); }); }
     async function serialExists(dir, prefix, numeric){
       if(!dir.entries) return false;
-      const pattern = new RegExp(`_${prefix}0*${numeric}\.pdf$`);
-      for await (const [name,handle] of dir.entries()){
+      const pattern = new RegExp(`_${prefix}0*${numeric}\\.pdf$`);
+      for await (const [name] of dir.entries()){
         if(/\.pdf$/i.test(name) && pattern.test(name)) return name;
       }
       return false;
@@ -390,6 +392,7 @@
       }catch(e){ console.error('NAS write failed; fallback to download.', e);
         const doc = await buildPdfDoc(); doc.save(fileName); }
     }
+
     function setTodayIfEmpty(inputName){
       const inp = document.querySelector(`input[name="${inputName}"]`);
       if(!inp) return;
@@ -408,8 +411,6 @@
       const r = Math.max(1, y - 2018);   // Reiwa
       return `${r}.${m}.${d}`;
     }
-
-    // tulis teks melengkung tegak
     function drawArcText(ctx, text, cx, cy, radius, startDeg, endDeg){
       const chars = Array.from(text);
       if (!chars.length) return;
@@ -431,74 +432,52 @@
       }
       ctx.restore();
     }
-
     function renderRedSealPNG({ name='', ymd='', size=360, company='東京精密発條株式会社' }){
       const dpr = Math.max(2, window.devicePixelRatio || 1);
       const c = document.createElement('canvas'); c.width=size*dpr; c.height=size*dpr;
       const g = c.getContext('2d'); g.scale(dpr,dpr);
-
       const cx=size/2, cy=size/2, R=size*0.45;
       g.fillStyle=INK; g.strokeStyle=INK; g.textAlign='center'; g.textBaseline='middle';
-
-      // Lingkar luar tipis & crisp
       const circleStroke = Math.max(1, size*0.016);
       g.lineWidth = circleStroke;
       g.beginPath(); g.arc(cx,cy,R - circleStroke/2,0,Math.PI*2); g.stroke();
-
-      // 検査合格 (atas)
       const HEAD_KANJI_SIZE = Math.round(size * 0.16);
       g.font=`800 ${HEAD_KANJI_SIZE}px "Yu Mincho","Hiragino Mincho ProN","MS Mincho",serif`;
       g.fillText('検査合格', cx, cy - size*0.225);
-
-      // pita tengah
       const bandH=size*0.14, y1=cy-bandH/2, y2=cy+bandH/2;
       g.lineWidth=Math.max(1, size*0.009);
       g.beginPath(); g.moveTo(cx-R*0.78,y1); g.lineTo(cx+R*0.78,y1); g.stroke();
       g.beginPath(); g.moveTo(cx-R*0.78,y2); g.lineTo(cx+R*0.78,y2); g.stroke();
-
-      // tanggal "令和 x.y.z"
       const dateStr = formatSealDate(ymd);
       if (dateStr) {
         const full = `令和 ${dateStr}`;
         g.font = `900 ${Math.round(size*0.16)}px "Yu Mincho","Yu Gothic",sans-serif`;
         g.fillText(full, cx, cy);
       }
-
-      // nama (tanpa kotak)
       if(name){
         const nameY = cy + size * 0.185;
         g.font=`700 ${Math.round(size*0.12)}px "Yu Mincho","MS Mincho",serif`;
         g.fillText(name, cx, nameY);
       }
-
-      // perusahaan melengkung DI DALAM lingkaran (bagian bawah)
       const innerMargin = size * 0.028;
       const companyRadius = R - circleStroke - innerMargin;
       g.font=`700 ${Math.round(size*0.095)}px "Yu Mincho","MS Mincho",serif`;
-      drawArcText(g, company, cx, cy, companyRadius, 160, 20); // bawah kiri→kanan
-
+      drawArcText(g, company, cx, cy, companyRadius, 160, 20);
       return c.toDataURL('image/png');
     }
-
     function updateDynamicSeal(){
       const whoSel = document.getElementById('stampWho');
       const who = whoSel ? whoSel.value.trim() : '';
       const box = document.getElementById('stampBox');
       const img = document.getElementById('stampMain');
-
-      if (!who) {
-        if (img) img.src = '';
-        box?.setAttribute('data-visible','0'); // kotak tetap terlihat (CSS hanya sembunyikan IMG)
-        return;
-      }
-
+      if (!who) { if (img) img.src = ''; box?.setAttribute('data-visible','0'); return; }
       box?.setAttribute('data-visible','1');
       const ymd = document.querySelector('input[name="hakkohiduke"]')?.value || '';
       const url = renderRedSealPNG({ name: who, ymd, company: COMPANY_LABEL });
       if (img) img.src = url || '';
     }
 
-    /* ---------- pengaturan sederhana ---------- */
+    /* ---------- simple settings ---------- */
     async function configureNextSerial(){
       try{
         const info = await apiGAS({ action:'getInfo', prefix: serverPrefix() });
@@ -524,21 +503,17 @@
     /* ---------- INIT ---------- */
     window.addEventListener('load', async () => {
       document.getElementById('companyOutside').textContent = COMPANY_LABEL;
-
       wireDateMirror(); wireEnterNavigationAll(); wireSerialMirror();
       setTodayIfEmpty('hakkohiduke'); applyPrefix();
       wireSoftRequired(); markSoftRequired();
       document.querySelector('input[name="zuban"]').addEventListener('change', ()=>{ applyPrefix(); });
-
       try{
         const info = await apiGAS({ action:'getInfo', prefix: serverPrefix() });
         if (typeof info?.digits === 'number' && info.digits >= 1) PAD_DIGITS = info.digits;
       }catch(e){}
-
       document.getElementById('stampWho')?.addEventListener('change', updateDynamicSeal);
       document.querySelector('select[name="inputter"]')?.addEventListener('change', updateDynamicSeal);
-
-      updateDynamicSeal(); // inisialisasi: kotak tampil, gambar hilang jika belum pilih
+      updateDynamicSeal();
       await ensureHasLockOrAcquire();
     });
     window.addEventListener('beforeunload', releaseSharedLock);
