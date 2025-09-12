@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>出荷検査成績書 WY-150X3</title>
+  <title>出荷検査成績書 WY-150V</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -65,8 +65,8 @@
 
     /* ==== Soft highlight untuk input yang belum terisi (data-soft-required) ==== */
     :root{
-      --soft-bg:#09fcfc;      /* kuning lembut */
-      --soft-border:#0a8ffc;  /* garis lembut */
+      --soft-bg:#09fcfc;      /* bebas */
+      --soft-border:#0a8ffc;  /* bebas */
     }
     [data-soft-required].pending{
       background:var(--soft-bg) !important;
@@ -185,14 +185,14 @@
           </td>
         </tr>
         <tr>
-          <td class="section-label">機種</td><td class="align-left">WY-150X3</td>
+          <td class="section-label">機種</td><td class="align-left">WY-150V</td>
           <td class="section-label">品番</td>
           <td>J21*4016013BB</td>
           <td class="section-label">図番</td>
           <td><input type="text" name="zuban" value="3596-70" class="soft-required" data-soft-required="1" /></td>
         </tr>
         <tr>
-          <td class="section-label">品名</td><td class="align-left">X2プロテクター</td>
+          <td class="section-label">品名</td><td class="align-left">X3プロテクター</td>
           <td class="section-label">製造日</td>
           <td class="align-left">
             <input type="date" name="makingdate" class="no-print soft-required" data-soft-required="1" />
