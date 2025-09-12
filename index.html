@@ -90,6 +90,63 @@
 
     .company-name { display:none !important; }
     .inspection-table th { background:#fff !important; }
+    /* =========================
+   HEADER FIX: simetris, anti overflow,
+   dan tetap mendukung soft highlight
+   ========================= */
+.header-table{
+  table-layout:fixed;              /* kolom konsisten di semua baris */
+  width:100%;
+}
+.header-table th, .header-table td{
+  overflow:hidden;                 /* cegah konten keluar garis */
+}
+
+/* netralkan width inline pada sel (mis. 25%) */
+.header-table td[style]{ width:auto !important; }
+
+/* Tetapkan lebar 6 kolom (total 100%) */
+.header-table tr > *:nth-child(1){ width:12% !important; }  /* label 1 */
+.header-table tr > *:nth-child(2){ width:21% !important; }  /* nilai 1 */
+.header-table tr > *:nth-child(3){ width:12% !important; }  /* label 2 */
+.header-table tr > *:nth-child(4){ width:21% !important; }  /* nilai 2 */
+.header-table tr > *:nth-child(5){ width:12% !important; }  /* label 3 */
+.header-table tr > *:nth-child(6){ width:22% !important; }  /* nilai 3 (kanan) */
+
+/* Input biasa di sel nilai kanan (date, zuban, dll) mengikuti lebar sel */
+.header-table .align-left > input{
+  display:block;
+  width:100%;
+  max-width:100%;
+}
+
+/* ---- Khusus 製造No ---- */
+.header-table .serial-wrap{
+  display:flex;
+  align-items:center;
+  gap:1mm;
+  width:100%;
+  max-width:100%;
+}
+.header-table .serial-wrap .serial-prefix{
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+.header-table .serial-wrap input[name="serial_no_suffix"]{
+  width:auto !important;           /* override aturan global width:100% */
+  flex:1 1 0;
+  min-width:0;
+  max-width:100%;
+  height:100%;
+  padding:0 1mm;
+  box-sizing:border-box;
+}
+/* soft highlight tetap tampil pada suffix */
+.header-table .serial-wrap input[name="serial_no_suffix"].pending{
+  background:var(--soft-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--soft-border) !important;
+}
+
   </style>
 </head>
 <body>
