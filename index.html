@@ -65,8 +65,8 @@
 
     /* ==== Soft highlight untuk input yang belum terisi (data-soft-required) ==== */
     :root{
-      --soft-bg:#fff7cc;      /* kuning lembut */
-      --soft-border:#e5b200;  /* garis lembut */
+      --soft-bg:#09fcfc;      /* kuning lembut */
+      --soft-border:#0a8ffc;  /* garis lembut */
     }
     [data-soft-required].pending{
       background:var(--soft-bg) !important;
@@ -528,12 +528,12 @@
 
     /* ---------- Cap merah ---------- */
     const INK = '#d42828';
-    function formatSealDate(ymd){
-      if(!ymd) return '';
-      const [y,m,d] = ymd.split('-').map(Number);
-      const r = Math.max(1, y - 2018); // Reiwa
-      return `${r}.${m}.${d}`;
-    }
+    function formatSealYMD(ymd){
+  if(!ymd) return '';
+  const [y,m,d] = ymd.split('-');
+  return `${y}.${m}.${d}`;
+}
+
     function drawArcText(ctx, text, cx, cy, radius, startDeg, endDeg){
       const chars = Array.from(text);
       if (!chars.length) return;
@@ -571,12 +571,13 @@
       g.lineWidth=Math.max(1, size*0.009);
       g.beginPath(); g.moveTo(cx-R*0.78,y1); g.lineTo(cx+R*0.78,y1); g.stroke();
       g.beginPath(); g.moveTo(cx-R*0.78,y2); g.lineTo(cx+R*0.78,y2); g.stroke();
-      const dateStr = formatSealDate(ymd);
-      if (dateStr) {
-        const full = `令和 ${dateStr}`;
-        g.font = `900 ${Math.round(size*0.16)}px "Yu Mincho","Yu Gothic",sans-serif`;
-        g.fillText(full, cx, cy);
-      }
+      const dateStr = formatSealYMD(ymd);
+if (dateStr) {
+  const full = `${dateStr}`; // contoh: 2025/09/11
+  g.font = `900 ${Math.round(size*0.16)}px "Yu Mincho","Yu Gothic",sans-serif`;
+  g.fillText(full, cx, cy);
+}
+
       if(name){
         const nameY = cy + size * 0.185;
         g.font=`700 ${Math.round(size*0.12)}px "Yu Mincho","MS Mincho",serif`;
