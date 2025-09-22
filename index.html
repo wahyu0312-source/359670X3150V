@@ -24,6 +24,12 @@
     .section-label { text-align:left; font-weight:bold; background:#fff; }
     .header-table td, .header-table th { white-space:nowrap; word-break:keep-all; }
     .header-table input { min-width:0; }
+    /* Biarkan nilai kolom 客先 wrap agar tidak terpotong */
+.header-table tr:first-child td:nth-child(2){
+  white-space: normal !important;   /* override nowrap */
+  word-break: break-word;           /* aman bila panjang */
+  overflow: visible !important;     /* jangan sembunyikan */
+}
     .td-measure { padding:0 !important; }
     .td-measure-grid { display:grid; grid-template-columns:1fr auto; align-items:center; gap:1mm; }
     .td-measure-grid input { text-align:right; }
@@ -175,7 +181,7 @@
       <table class="header-table">
         <tr>
           <td class="section-label">客先</td>
-          <td style="width:25%;">中村留精密工業（㈱） 御中</td>
+          <td style="width:25%;">中村留精密工業㈱ 御中</td>
           <td class="section-label">管理No.</td>
           <td>TTS60-01-691</td>
           <td class="section-label">発行年月日</td>
